@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeshCipher - Private Messaging That Works Everywhere</title>
+    <meta name="description" content="Privacy-focused encrypted messaging for Android with five independent transport layers including Bluetooth mesh, WiFi Direct, and Tor hidden services.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #060910;
+            --bg-primary: #0A0E14;
+            --bg-surface: #111720;
+            --bg-elevated: #1A2332;
+            --bg-hover: #1E2A3A;
+            --accent: #00E676;
+            --accent-dim: #00C853;
+            --accent-glow: rgba(0, 230, 118, 0.15);
+            --accent-subtle: rgba(0, 230, 118, 0.08);
+            --text-primary: #E8EAED;
+            --text-secondary: #9AA0A6;
+            --text-tertiary: #5F6368;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(0, 230, 118, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-elevated) var(--bg-primary);
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---- ANIMATED MESH GRID BACKGROUND ---- */
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .mesh-bg canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ---- NAVIGATION ---- */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 0 2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(0px);
+            background: transparent;
+        }
+
+        nav.scrolled {
+            backdrop-filter: blur(20px) saturate(1.2);
+            background: rgba(10, 14, 20, 0.85);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .nav-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-logo .logo-bracket {
+            opacity: 0.4;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            text-decoration: none;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 0.75rem !important;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-accent);
+            color: var(--accent) !important;
+            border-radius: 4px;
+            transition: all 0.2s !important;
+        }
+
+        .nav-cta:hover {
+            background: var(--accent-subtle);
+        }
+
+        .nav-cta::after {
+            display: none !important;
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .mobile-toggle svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* ---- SECTIONS COMMON ---- */
+        section {
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-label::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 1px;
+            background: var(--accent);
+            opacity: 0.5;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            max-width: 580px;
+            line-height: 1.7;
+        }
+
+        /* ---- REVEAL ANIMATIONS ---- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+        .reveal-delay-6 { transition-delay: 0.6s; }
+        .reveal-delay-7 { transition-delay: 0.7s; }
+
+        /* ---- HERO ---- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 64px;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 720px;
+        }
+
+        .hero-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            margin-bottom: 2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.4rem 0.9rem;
+            background: var(--accent-subtle);
+            border: 1px solid rgba(0, 230, 118, 0.12);
+            border-radius: 100px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0, 230, 118, 0); }
+        }
+
+        .hero h1 {
+            font-size: clamp(2.8rem, 7vw, 5rem);
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 .accent {
+            color: var(--accent);
+            position: relative;
+        }
+
+        .hero-tagline {
+            font-size: clamp(1.1rem, 2vw, 1.35rem);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+            max-width: 540px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.85rem 1.8rem;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: all 0.25s ease;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dim);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 230, 118, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-tertiary);
+            background: var(--bg-surface);
+            transform: translateY(-2px);
+        }
+
+        .hero-meta {
+            margin-top: 3.5rem;
+            display: flex;
+            gap: 2.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            letter-spacing: 0.03em;
+        }
+
+        .hero-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero-meta .meta-value {
+            color: var(--text-secondary);
+        }
+
+        /* ---- FEATURES ---- */
+        .features {
+            padding: 8rem 0;
+        }
+
+        .features-header {
+            margin-bottom: 4rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            padding: 2rem;
+            transition: background 0.3s ease;
+            position: relative;
+        }
+
+        .feature-card:hover {
+            background: var(--bg-surface);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover::before {
+            opacity: 0.5;
+        }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 1.2rem;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+
+        .feature-card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-card p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--accent);
+            letter-spacing: 0.06em;
+            margin-top: 1rem;
+            opacity: 0.7;
+        }
+
+        /* ---- TRANSPORT MODES ---- */
+        .transport {
+            padding: 8rem 0;
+        }
+
+        .transport-header {
+            margin-bottom: 4rem;
+        }
+
+        .transport-note {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-top: 1.5rem;
+            padding: 0.8rem 1rem;
+            border-left: 2px solid var(--accent);
+            background: var(--accent-subtle);
+        }
+
+        .transport-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .transport-card {
+            padding: 2rem 1.5rem;
+            border-right: 1px solid var(--border);
+            background: var(--bg-primary);
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transport-card:last-child {
+            border-right: none;
+        }
+
+        .transport-card:hover {
+            background: var(--bg-surface);
+        }
+
+        .transport-card:hover .transport-indicator {
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .transport-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .transport-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .transport-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            margin-top: auto;
+        }
+
+        .transport-spec {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+        }
+
+        .transport-spec .spec-label {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-tertiary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .transport-spec .spec-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .spec-value.good { color: var(--accent); }
+        .spec-value.medium { color: #FFB74D; }
+        .spec-value.neutral { color: var(--text-secondary); }
+
+        .transport-indicator {
+            width: 100%;
+            height: 3px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            margin-top: 1.2rem;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+
+        .transport-indicator .fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--accent);
+            transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 0;
+        }
+
+        .transport-card.visible .fill {
+            width: var(--privacy-level);
+        }
+
+        /* ---- HOW IT WORKS ---- */
+        .how-it-works {
+            padding: 8rem 0;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: calc(16.67% + 1rem);
+            right: calc(16.67% + 1rem);
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent), var(--border-accent), var(--accent));
+            opacity: 0.3;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--bg-deep);
+            background: var(--accent);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1.2rem;
+            color: var(--accent);
+            opacity: 0.6;
+        }
+
+        .step h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.01em;
+        }
+
+        .step p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        /* ---- ABOUT ---- */
+        .about {
+            padding: 8rem 0;
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: clamp(1.8rem, 3vw, 2.4rem);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+        }
+
+        .about-text p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .about-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .about-link {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .about-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-subtle);
+        }
+
+        .about-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .about-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .about-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .about-card-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .about-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .about-card .role {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .about-card .sponsor-note {
+            font-size: 0.82rem;
+            color: var(--text-tertiary);
+            line-height: 1.6;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sponsor-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-decoration: none;
+            margin-top: 1rem;
+            padding: 0.5rem 0;
+            transition: opacity 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .sponsor-btn:hover {
+            opacity: 0.8;
+        }
+
+        .sponsor-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* ---- FOOTER ---- */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 3rem 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .footer-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+
+        .footer-links a {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            letter-spacing: 0.04em;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        .footer-right {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-tertiary);
+            letter-spacing: 0.03em;
+        }
+
+        /* ---- DIVIDER ---- */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .transport-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .transport-card:nth-child(3) {
+                border-right: none;
+            }
+
+            .transport-card:nth-child(4),
+            .transport-card:nth-child(5) {
+                border-top: 1px solid var(--border);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 64px;
+                left: 0;
+                right: 0;
+                background: rgba(10, 14, 20, 0.95);
+                backdrop-filter: blur(20px);
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1.5rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-links.open {
+                display: flex;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .transport-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .transport-card {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .transport-card:last-child {
+                border-bottom: none;
+            }
+
+            .transport-card:nth-child(4),
+            .transport-card:nth-child(5) {
+                border-top: none;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+
+            .steps::before {
+                display: none;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .hero-meta {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                gap: 1.5rem;
+                text-align: center;
+            }
+
+            .footer-left {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .about-links {
+                flex-wrap: wrap;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mesh Background -->
+    <div class="mesh-bg">
+        <canvas id="meshCanvas"></canvas>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="nav">
+        <div class="nav-inner">
+            <a href="#" class="nav-logo">
+                <span class="logo-bracket">[</span>MeshCipher<span class="logo-bracket">]</span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#transport">Transport</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="https://github.com/NickEvans4130/MeshCipher" class="nav-cta" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+            <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-status reveal">
+                    <span class="status-dot"></span>
+                    Open Source / Apache 2.0
+                </div>
+                <h1 class="reveal reveal-delay-1">
+                    Mesh<span class="accent">Cipher</span>
+                </h1>
+                <p class="hero-tagline reveal reveal-delay-2">
+                    Private messaging that works everywhere. Even off the grid.
+                    Five independent transport layers. One unbreakable encryption standard.
+                </p>
+                <div class="hero-buttons reveal reveal-delay-3">
+                    <a href="https://github.com/NickEvans4130/MeshCipher/releases" class="btn btn-primary" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download APK
+                    </a>
+                    <a href="https://github.com/NickEvans4130/MeshCipher" class="btn btn-secondary" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        View Source
+                    </a>
+                </div>
+                <div class="hero-meta reveal reveal-delay-4">
+                    <span>Protocol <span class="meta-value">Signal (X3DH + Double Ratchet)</span></span>
+                    <span>Encryption <span class="meta-value">AES-256-GCM</span></span>
+                    <span>Platform <span class="meta-value">Android</span></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="features-header">
+                <div class="section-label reveal">Capabilities</div>
+                <h2 class="section-title reveal reveal-delay-1">Built for privacy.<br>Designed for resilience.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Every layer of MeshCipher is engineered to protect your communications, whether you have internet access or not.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <h3>End-to-End Encryption</h3>
+                    <p>Signal Protocol with X3DH key agreement and Double Ratchet for perfect forward secrecy on every message.</p>
+                    <div class="feature-tag">SIGNAL PROTOCOL</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <h3>Five Transport Modes</h3>
+                    <p>Direct relay, Tor relay, WiFi Direct, Bluetooth mesh, and P2P Tor hidden services. Works with or without internet.</p>
+                    <div class="feature-tag">MULTI-TRANSPORT</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <h3>Hardware-Bound Identity</h3>
+                    <p>ECDSA P-256 keys generated and stored in Android Keystore TEE/StrongBox. Keys never leave secure hardware.</p>
+                    <div class="feature-tag">ANDROID KEYSTORE</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-3">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                    <h3>Encrypted Database</h3>
+                    <p>All local data encrypted at rest with SQLCipher AES-256. Database key derived from hardware-backed Android Keystore.</p>
+                    <div class="feature-tag">SQLCIPHER AES-256</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-4">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <h3>Disappearing Messages</h3>
+                    <p>Configurable auto-delete with multiple retention periods. Messages and media cleaned from both database and filesystem.</p>
+                    <div class="feature-tag">AUTO-DELETE</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-5">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                    <h3>QR Code Exchange</h3>
+                    <p>In-person contact exchange via QR codes. Verify identity keys face-to-face with no server involvement.</p>
+                    <div class="feature-tag">KEY VERIFICATION</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-6">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <h3>Secure Media</h3>
+                    <p>Images, video, and voice messages encrypted with per-message AES-256-GCM keys before transport.</p>
+                    <div class="feature-tag">AES-256-GCM</div>
+                </div>
+                <div class="feature-card reveal reveal-delay-7">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    <h3>Open Source</h3>
+                    <p>Fully auditable codebase under Apache 2.0 license. Every line of code is public and verifiable.</p>
+                    <div class="feature-tag">APACHE 2.0</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- Transport Modes -->
+    <section class="transport" id="transport">
+        <div class="container">
+            <div class="transport-header">
+                <div class="section-label reveal">Transport Layer</div>
+                <h2 class="section-title reveal reveal-delay-1">Five ways to deliver.<br>One encryption standard.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Choose your transport based on your threat model. All modes deliver the same Signal Protocol-encrypted payload.</p>
+                <div class="transport-note reveal reveal-delay-3">
+                    The encryption layer is completely independent of the transport layer. Switching modes changes how messages travel, not how they're protected.
+                </div>
+            </div>
+            <div class="transport-grid">
+                <div class="transport-card reveal" style="--privacy-level: 40%">
+                    <div class="transport-name">Direct</div>
+                    <div class="transport-desc">Fast delivery through HTTPS relay server. Best for everyday messaging when speed matters.</div>
+                    <div class="transport-specs">
+                        <div class="transport-spec">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value neutral">HTTPS</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Range</span>
+                            <span class="spec-value good">Global</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Speed</span>
+                            <span class="spec-value good">Fast</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Privacy</span>
+                            <span class="spec-value medium">IP visible</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Server</span>
+                            <span class="spec-value neutral">Required</span>
+                        </div>
+                    </div>
+                    <div class="transport-indicator"><div class="fill"></div></div>
+                </div>
+                <div class="transport-card reveal reveal-delay-1" style="--privacy-level: 65%">
+                    <div class="transport-name">Tor Relay</div>
+                    <div class="transport-desc">Messages routed through Tor network, hiding your IP address from the relay server.</div>
+                    <div class="transport-specs">
+                        <div class="transport-spec">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value neutral">HTTPS + Tor</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Range</span>
+                            <span class="spec-value good">Global</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Speed</span>
+                            <span class="spec-value medium">Medium</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Privacy</span>
+                            <span class="spec-value good">IP hidden</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Server</span>
+                            <span class="spec-value neutral">+ Orbot</span>
+                        </div>
+                    </div>
+                    <div class="transport-indicator"><div class="fill"></div></div>
+                </div>
+                <div class="transport-card reveal reveal-delay-2" style="--privacy-level: 80%">
+                    <div class="transport-name">WiFi Direct</div>
+                    <div class="transport-desc">Peer-to-peer over WiFi P2P. No internet, no servers, no network trace left behind.</div>
+                    <div class="transport-specs">
+                        <div class="transport-spec">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value neutral">WiFi P2P</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Range</span>
+                            <span class="spec-value medium">~100m</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Speed</span>
+                            <span class="spec-value good">Fast</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Privacy</span>
+                            <span class="spec-value good">No trace</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Server</span>
+                            <span class="spec-value good">None</span>
+                        </div>
+                    </div>
+                    <div class="transport-indicator"><div class="fill"></div></div>
+                </div>
+                <div class="transport-card reveal reveal-delay-3" style="--privacy-level: 85%">
+                    <div class="transport-name">BLE Mesh</div>
+                    <div class="transport-desc">Multi-hop Bluetooth mesh routing. Messages bounce between nearby devices to reach their destination.</div>
+                    <div class="transport-specs">
+                        <div class="transport-spec">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value neutral">BLE</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Range</span>
+                            <span class="spec-value medium">30-100m/hop</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Speed</span>
+                            <span class="spec-value medium">Low</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Privacy</span>
+                            <span class="spec-value good">No trace</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Server</span>
+                            <span class="spec-value good">None</span>
+                        </div>
+                    </div>
+                    <div class="transport-indicator"><div class="fill"></div></div>
+                </div>
+                <div class="transport-card reveal reveal-delay-4" style="--privacy-level: 100%">
+                    <div class="transport-name">P2P Tor</div>
+                    <div class="transport-desc">Direct connection via Tor hidden services. Your device is its own anonymous .onion endpoint.</div>
+                    <div class="transport-specs">
+                        <div class="transport-spec">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value neutral">Hidden svc</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Range</span>
+                            <span class="spec-value good">Global</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Speed</span>
+                            <span class="spec-value medium">Medium</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Privacy</span>
+                            <span class="spec-value good">Anonymous</span>
+                        </div>
+                        <div class="transport-spec">
+                            <span class="spec-label">Server</span>
+                            <span class="spec-value good">None</span>
+                        </div>
+                    </div>
+                    <div class="transport-indicator"><div class="fill"></div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="features-header">
+                <div class="section-label reveal">Getting Started</div>
+                <h2 class="section-title reveal reveal-delay-1">Three steps to secure communication.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">No phone number. No email. No accounts. Just cryptographic identity.</p>
+            </div>
+            <div class="steps">
+                <div class="step reveal">
+                    <div class="step-number">1</div>
+                    <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    <h3>Create Identity</h3>
+                    <p>A hardware-bound ECDSA key pair is generated inside your device's secure enclave. Your identity never leaves the chip.</p>
+                </div>
+                <div class="step reveal reveal-delay-2">
+                    <div class="step-number">2</div>
+                    <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    <h3>Add Contacts</h3>
+                    <p>Scan QR codes in person to exchange public keys. No server sees your contact list. Verify identity face-to-face.</p>
+                </div>
+                <div class="step reveal reveal-delay-4">
+                    <div class="step-number">3</div>
+                    <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    <h3>Message Securely</h3>
+                    <p>Choose your transport mode and send. Signal Protocol encrypts everything end-to-end regardless of how it travels.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- About -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text reveal">
+                    <div class="section-label">About</div>
+                    <h2>Built because privacy<br>shouldn't be optional.</h2>
+                    <p>MeshCipher exists because private communication shouldn't depend on a single company's infrastructure or require an internet connection.</p>
+                    <p>Every transport mode, every encryption layer, every line of code is open source and auditable.</p>
+                    <div class="about-links">
+                        <a href="https://github.com/NickEvans4130" class="about-link" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            GitHub
+                        </a>
+                        <a href="https://linkedin.com/in/NickEvans4130" class="about-link" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            LinkedIn
+                        </a>
+                        <a href="https://github.com/sponsors/NickEvans4130" class="about-link" target="_blank" rel="noopener">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            Sponsor
+                        </a>
+                    </div>
+                </div>
+                <div class="about-card reveal reveal-delay-2">
+                    <div class="about-card-label">Creator</div>
+                    <h3>Nick Evans</h3>
+                    <div class="role">First year MSci Student, Royal Holloway</div>
+                    <div class="sponsor-note">
+                        MeshCipher is built and maintained in my free time alongside university. If you find this project useful, consider sponsoring to help keep development going.
+                    </div>
+                    <a href="https://github.com/sponsors/NickEvans4130" class="sponsor-btn" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        Support this project ->
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-left">
+                    <span class="footer-logo">[MeshCipher]</span>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/NickEvans4130/MeshCipher" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/NickEvans4130/MeshCipher/tree/develop/docs" target="_blank" rel="noopener">Docs</a></li>
+                        <li><a href="https://github.com/NickEvans4130/MeshCipher/blob/develop/LICENSE" target="_blank" rel="noopener">Apache 2.0</a></li>
+                        <li><a href="https://github.com/sponsors/NickEvans4130" target="_blank" rel="noopener">Sponsor</a></li>
+                    </ul>
+                </div>
+                <div class="footer-right">
+                    Privacy is not a feature. It is a right.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ---- Mesh Network Background Animation ----
+        (function() {
+            const canvas = document.getElementById('meshCanvas');
+            const ctx = canvas.getContext('2d');
+            let nodes = [];
+            let animFrame;
+            const NODE_COUNT = 60;
+            const CONNECTION_DIST = 150;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function initNodes() {
+                nodes = [];
+                for (let i = 0; i < NODE_COUNT; i++) {
+                    nodes.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.3,
+                        vy: (Math.random() - 0.5) * 0.3,
+                        r: Math.random() * 1.5 + 0.5
+                    });
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                for (let i = 0; i < nodes.length; i++) {
+                    const a = nodes[i];
+                    a.x += a.vx;
+                    a.y += a.vy;
+
+                    if (a.x < 0 || a.x > canvas.width) a.vx *= -1;
+                    if (a.y < 0 || a.y > canvas.height) a.vy *= -1;
+
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const b = nodes[j];
+                        const dx = a.x - b.x;
+                        const dy = a.y - b.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < CONNECTION_DIST) {
+                            const opacity = (1 - dist / CONNECTION_DIST) * 0.15;
+                            ctx.strokeStyle = `rgba(0, 230, 118, ${opacity})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(a.x, a.y);
+                            ctx.lineTo(b.x, b.y);
+                            ctx.stroke();
+                        }
+                    }
+
+                    ctx.fillStyle = 'rgba(0, 230, 118, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                animFrame = requestAnimationFrame(draw);
+            }
+
+            resize();
+            initNodes();
+            draw();
+
+            window.addEventListener('resize', () => {
+                resize();
+                initNodes();
+            });
+        })();
+
+        // ---- Navigation scroll behavior ----
+        const nav = document.getElementById('nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // ---- Mobile menu toggle ----
+        document.getElementById('mobileToggle').addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+
+        // Close mobile menu on link click
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('navLinks').classList.remove('open');
+            });
+        });
+
+        // ---- Intersection Observer for reveal animations ----
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // ---- Transport privacy bar animation ----
+        const transportObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.transport-card').forEach(card => {
+            transportObserver.observe(card);
+        });
+    </script>
+</body>
+</html>
