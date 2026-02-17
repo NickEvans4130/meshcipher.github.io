@@ -456,6 +456,54 @@
             opacity: 0.7;
         }
 
+        /* ---- USE CASES ---- */
+        .use-cases {
+            padding: 8rem 0;
+        }
+
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .use-case-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .use-case-card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+        }
+
+        .use-case-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 1.25rem;
+            color: var(--accent);
+        }
+
+        .use-case-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .use-case-card h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .use-case-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
         /* ---- TRANSPORT MODES ---- */
         .transport {
             padding: 8rem 0;
@@ -861,6 +909,43 @@
             height: 14px;
         }
 
+        /* ---- DEMO PLACEHOLDER ---- */
+        .demo-placeholder {
+            padding: 4rem 0;
+        }
+
+        .demo-banner {
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .demo-inner {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .demo-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--text-tertiary);
+            margin-bottom: 1.25rem;
+        }
+
+        .demo-banner h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .demo-banner p {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+            line-height: 1.6;
+        }
+
         /* ---- BETA TESTING ---- */
         .beta {
             padding: 8rem 0;
@@ -1044,6 +1129,10 @@
                 grid-template-columns: repeat(2, 1fr);
             }
 
+            .use-cases-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
             .transport-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -1082,6 +1171,10 @@
             }
 
             .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .use-cases-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -1187,25 +1280,26 @@
                     Open Source / Apache 2.0
                 </div>
                 <h1 class="reveal reveal-delay-1">
-                    Mesh<span class="accent">Cipher</span>
+                    Your messages should be<br><span class="accent">yours alone.</span>
                 </h1>
                 <p class="hero-tagline reveal reveal-delay-2">
-                    Private messaging that works everywhere. Even off the grid.
-                    Five independent transport layers. One unbreakable encryption standard.
+                    Most messengers need the internet and trust a server with your data.
+                    MeshCipher works over Bluetooth, WiFi, Tor, or the internet &mdash; and encrypts
+                    everything so only you and your contact can read it.
                 </p>
                 <div class="hero-buttons reveal reveal-delay-3">
-                    <a href="https://github.com/NickEvans4130/MeshCipher/releases" class="btn btn-primary" target="_blank" rel="noopener">
+                    <a href="#how-it-works" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                        See How It Works
+                    </a>
+                    <a href="https://github.com/NickEvans4130/MeshCipher/releases" class="btn btn-secondary" target="_blank" rel="noopener">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Download APK
                     </a>
-                    <a href="https://github.com/NickEvans4130/MeshCipher" class="btn btn-secondary" target="_blank" rel="noopener">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                        View Source
-                    </a>
                 </div>
                 <div class="hero-meta reveal reveal-delay-4">
-                    <span>Protocol <span class="meta-value">Signal (X3DH + Double Ratchet)</span></span>
-                    <span>Encryption <span class="meta-value">AES-256-GCM</span></span>
+                    <span>Encryption <span class="meta-value">End-to-End (Signal Protocol)</span></span>
+                    <span>Transports <span class="meta-value">5 Independent Modes</span></span>
                     <span>Platform <span class="meta-value">Android</span></span>
                 </div>
             </div>
@@ -1218,9 +1312,9 @@
     <section class="features" id="features">
         <div class="container">
             <div class="features-header">
-                <div class="section-label reveal">Capabilities</div>
-                <h2 class="section-title reveal reveal-delay-1">Built for privacy.<br>Designed for resilience.</h2>
-                <p class="section-subtitle reveal reveal-delay-2">Every layer of MeshCipher is engineered to protect your communications, whether you have internet access or not.</p>
+                <div class="section-label reveal">What You Get</div>
+                <h2 class="section-title reveal reveal-delay-1">Private by default.<br>Resilient by design.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Your messages stay encrypted, your identity stays on your device, and your conversations keep working even when the internet doesn't.</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card reveal">
@@ -1277,6 +1371,48 @@
 
     <div class="section-divider"></div>
 
+    <!-- Who This Is For -->
+    <section class="use-cases" id="use-cases">
+        <div class="container">
+            <div class="features-header">
+                <div class="section-label reveal">Who This Is For</div>
+                <h2 class="section-title reveal reveal-delay-1">Built for people who need<br>messaging that just works.</h2>
+            </div>
+            <div class="use-cases-grid">
+                <div class="use-case-card reveal">
+                    <div class="use-case-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h3>Activists & Organizers</h3>
+                    <p>Coordinate without relying on infrastructure that can be shut down or surveilled. Bluetooth mesh and WiFi Direct work even during internet blackouts.</p>
+                </div>
+                <div class="use-case-card reveal reveal-delay-1">
+                    <div class="use-case-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <h3>Remote & Field Teams</h3>
+                    <p>Stay connected in areas with no cell coverage. MeshCipher's offline modes let you message nearby teammates without any network infrastructure.</p>
+                </div>
+                <div class="use-case-card reveal reveal-delay-2">
+                    <div class="use-case-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    </div>
+                    <h3>Privacy-Conscious Users</h3>
+                    <p>No phone number, no email, no account required. Your identity is a key stored on your device's secure hardware &mdash; not on someone else's server.</p>
+                </div>
+                <div class="use-case-card reveal reveal-delay-3">
+                    <div class="use-case-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <h3>Journalists & Sources</h3>
+                    <p>Protect source confidentiality with Tor hidden service mode. Both sides stay anonymous &mdash; no IP addresses, no server logs, no metadata trail.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
     <!-- Transport Modes -->
     <section class="transport" id="transport">
         <div class="container">
@@ -1286,6 +1422,9 @@
                 <p class="section-subtitle reveal reveal-delay-2">Choose your transport based on your threat model. All modes deliver the same Signal Protocol-encrypted payload.</p>
                 <div class="transport-note reveal reveal-delay-3">
                     The encryption layer is completely independent of the transport layer. Switching modes changes how messages travel, not how they're protected.
+                </div>
+                <div class="transport-note reveal reveal-delay-4" style="margin-top: 0.75rem;">
+                    <strong>Smart Mode:</strong> Not sure which to pick? MeshCipher can automatically select the best available transport and fall back through alternatives if one is unavailable. You don't need to configure anything to start messaging securely.
                 </div>
             </div>
             <div class="transport-grid">
@@ -1473,26 +1612,41 @@
             <div class="features-header">
                 <div class="section-label reveal">Getting Started</div>
                 <h2 class="section-title reveal reveal-delay-1">Three steps to secure communication.</h2>
-                <p class="section-subtitle reveal reveal-delay-2">No phone number. No email. No accounts. Just cryptographic identity.</p>
+                <p class="section-subtitle reveal reveal-delay-2">No phone number. No email. No account. Your device is your identity.</p>
             </div>
             <div class="steps">
                 <div class="step reveal">
                     <div class="step-number">1</div>
                     <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                     <h3>Create Identity</h3>
-                    <p>A hardware-bound ECDSA key pair is generated inside your device's secure enclave. Your identity never leaves the chip.</p>
+                    <p>Open the app and your device generates a unique cryptographic identity stored in secure hardware. Nothing leaves your phone.</p>
                 </div>
                 <div class="step reveal reveal-delay-2">
                     <div class="step-number">2</div>
                     <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                     <h3>Add Contacts</h3>
-                    <p>Exchange keys via QR code scan when in person, or share your public key over any trusted channel for remote contacts. In-person verification is strongest, but not required.</p>
+                    <p>Scan a QR code when you're together in person, or share your contact card over any channel you trust. In-person is strongest, but not required.</p>
                 </div>
                 <div class="step reveal reveal-delay-4">
                     <div class="step-number">3</div>
                     <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                     <h3>Message Securely</h3>
                     <p>Choose your transport mode and send. Signal Protocol encrypts everything end-to-end regardless of how it travels.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- Demo Placeholder -->
+    <section class="demo-placeholder" id="demo">
+        <div class="container">
+            <div class="demo-banner reveal">
+                <div class="demo-inner">
+                    <svg class="demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    <h3>Video walkthrough coming soon</h3>
+                    <p>A short demo showing MeshCipher in action &mdash; from creating your identity to sending your first encrypted message across different transport modes.</p>
                 </div>
             </div>
         </div>
