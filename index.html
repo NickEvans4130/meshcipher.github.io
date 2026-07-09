@@ -1241,6 +1241,39 @@
     </style>
 </head>
 <body>
+    <!-- Keep Android Open Banner -->
+    <div id="android-banner"></div>
+    <script src="https://keepandroidopen.org/banner.js?id=android-banner&size=mini&animation=on"></script>
+    <style>
+        #android-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+        }
+        #android-banner > * {
+            font-family: 'DM Sans', sans-serif !important;
+        }
+    </style>
+    <script>
+        (function() {
+            function adjustNav() {
+                var banner = document.getElementById('android-banner');
+                var nav = document.getElementById('nav');
+                if (banner && nav) {
+                    var h = banner.offsetHeight;
+                    nav.style.top = h + 'px';
+                }
+            }
+            window.addEventListener('load', adjustNav);
+            window.addEventListener('resize', adjustNav);
+            /* Also adjust when banner is dismissed */
+            var obs = new MutationObserver(adjustNav);
+            obs.observe(document.getElementById('android-banner'), { childList: true, subtree: true, attributes: true });
+        })();
+    </script>
+
     <!-- Mesh Background -->
     <div class="mesh-bg">
         <canvas id="meshCanvas"></canvas>
